@@ -25,13 +25,19 @@ namespace GivenSpecs.CommandLine
     {
         static int Main(string[] args)
         {
-            return Parser.Default
-                .ParseArguments<GenerateOptions, OtherOptions>(args)
-                .MapResult(
-                    (GenerateOptions opts) => RunGenerateAndReturnExitCode(opts),
-                    (OtherOptions opts) => 1,
-                    errs => 1
-                );
+            RunGenerateAndReturnExitCode(new GenerateOptions()
+            {
+                FeaturePath = @"D:\DEV\personal\givenspecs\TestProject\Features\00BasicGherkin",
+                Namespace = "TestProject.Features"
+            });
+            return 0;
+            //return Parser.Default
+            //    .ParseArguments<GenerateOptions, OtherOptions>(args)
+            //    .MapResult(
+            //        (GenerateOptions opts) => RunGenerateAndReturnExitCode(opts),
+            //        (OtherOptions opts) => 1,
+            //        errs => 1
+            //    );
         }
 
         static int RunGenerateAndReturnExitCode(GenerateOptions opts)
@@ -51,7 +57,7 @@ namespace GivenSpecs.CommandLine
                 }
                 catch (Exception ex )
                 {
-
+                    throw;
                 }
             }
             return 0;

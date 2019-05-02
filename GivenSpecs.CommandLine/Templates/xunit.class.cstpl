@@ -1,20 +1,26 @@
 ﻿@using RazorLight
 @inherits TemplatePage<GivenSpecs.CommandLine.Generate.XunitGenerator_Feature>
 using Xunit;
+using Xunit.Abstractions;
 using GivenSpecs;
 
 namespace @(Model.Namespace) {
     public class @(Model.Class) {
 
         private readonly GivenSpecs.StepResolver _steps;
-        public @(Model.Class)()
+		private readonly ITestOutputHelper _output;
+
+        public @(Model.Class)(ITestOutputHelper output)
         {
-            _steps = new GivenSpecs.StepResolver(System.Reflection.Assembly.GetExecutingAssembly());
+			_output = output;
+            _steps = new GivenSpecs.StepResolver(System.Reflection.Assembly.GetExecutingAssembly(), _output);
         }
 
 		// Background
 		private void _Background()
 		{
+			_steps.BeforeScenario();
+
 			@foreach(var step in Model.BackgroundSteps) 
 			{
 				@if(step.Table != null) 
@@ -22,7 +28,7 @@ namespace @(Model.Namespace) {
 			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
 					@foreach(var header in step.HeaderRow.Cells) 
 					{
-				@:"@(header.Value)",
+				@:"@Raw(header.Value)",
 					}	
 			@:});
 				@foreach(var tableRow in step.DataRows)
@@ -30,13 +36,13 @@ namespace @(Model.Namespace) {
 			@:table@(step.Random).AddRow(new string[] {
 					@foreach(var cell in tableRow.Cells) 
 					{
-				@:"@(cell.Value)",
+				@:"@Raw(cell.Value)",
 					}
 			@:});
 				}
-			@:_steps.@(step.Keyword)(@@"@(step.Text)", table@(step.Random));
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", table@(step.Random));
 				} else {
-			@:_steps.@(step.Keyword)(@@"@(step.Text)", null);	
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", null);	
 				}
 			}
 		}
@@ -51,6 +57,7 @@ namespace @(Model.Namespace) {
 			}
 		@:public void @(sc.MethodName)()
 		@:{
+			@:this._Background();
 			@foreach(var step in sc.Steps) 
 			{
 				@if(step.Table != null) 
@@ -58,7 +65,7 @@ namespace @(Model.Namespace) {
 			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
 					@foreach(var header in step.HeaderRow.Cells) 
 					{
-				@:"@(header.Value)",
+				@:"@Raw(header.Value)",
 					}	
 			@:});
 				@foreach(var tableRow in step.DataRows)
@@ -66,15 +73,16 @@ namespace @(Model.Namespace) {
 			@:table@(step.Random).AddRow(new string[] {
 					@foreach(var cell in tableRow.Cells) 
 					{
-				@:"@(cell.Value)",
+				@:"@Raw(cell.Value)",
 					}
 			@:});
 				}
-			@:_steps.@(step.Keyword)(@@"@(step.Text)", table@(step.Random));
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", table@(step.Random));
 				} else {
-			@:_steps.@(step.Keyword)(@@"@(step.Text)", null);	
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", null);	
 				}
 			}
+			@:_steps.AfterScenario();
 		@:}
 
 		}

@@ -1,0 +1,82 @@
+﻿@using RazorLight
+@inherits TemplatePage<GivenSpecs.CommandLine.Generate.XunitGenerator_Feature>
+using Xunit;
+using GivenSpecs;
+
+namespace @(Model.Namespace) {
+    public class @(Model.Class) {
+
+        private readonly GivenSpecs.StepResolver _steps;
+        public @(Model.Class)()
+        {
+            _steps = new GivenSpecs.StepResolver(System.Reflection.Assembly.GetExecutingAssembly());
+        }
+
+		// Background
+		private void _Background()
+		{
+			@foreach(var step in Model.BackgroundSteps) 
+			{
+				@if(step.Table != null) 
+				{
+			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
+					@foreach(var header in step.HeaderRow.Cells) 
+					{
+				@:"@(header.Value)",
+					}	
+			@:});
+				@foreach(var tableRow in step.DataRows)
+				{
+			@:table@(step.Random).AddRow(new string[] {
+					@foreach(var cell in tableRow.Cells) 
+					{
+				@:"@(cell.Value)",
+					}
+			@:});
+				}
+			@:_steps.@(step.Keyword)(@@"@(step.Text)", table@(step.Random));
+				} else {
+			@:_steps.@(step.Keyword)(@@"@(step.Text)", null);	
+				}
+			}
+		}
+
+		// Scenarios
+		@foreach(var sc in Model.Scenarios)
+		{
+		@:[Fact(DisplayName="@(sc.DisplayName)")]
+			@foreach(var tag in sc.Tags)
+			{
+		@:[Trait("Category", "@(tag)")]
+			}
+		@:public void @(sc.MethodName)()
+		@:{
+			@foreach(var step in sc.Steps) 
+			{
+				@if(step.Table != null) 
+				{
+			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
+					@foreach(var header in step.HeaderRow.Cells) 
+					{
+				@:"@(header.Value)",
+					}	
+			@:});
+				@foreach(var tableRow in step.DataRows)
+				{
+			@:table@(step.Random).AddRow(new string[] {
+					@foreach(var cell in tableRow.Cells) 
+					{
+				@:"@(cell.Value)",
+					}
+			@:});
+				}
+			@:_steps.@(step.Keyword)(@@"@(step.Text)", table@(step.Random));
+				} else {
+			@:_steps.@(step.Keyword)(@@"@(step.Text)", null);	
+				}
+			}
+		@:}
+
+		}
+    }
+}

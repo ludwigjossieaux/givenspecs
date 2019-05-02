@@ -53,7 +53,7 @@ namespace GivenSpecs.CommandLine
                     var content = parser.Parse(f.FullName);
                     var test = gen.Generate(content);
                     var outputPath = f.FullName + ".cs";
-                    File.WriteAllTextAsync(outputPath, test);
+                    File.WriteAllText(outputPath, test);
                 }
                 catch (Exception ex )
                 {

@@ -19,8 +19,6 @@ namespace @(Model.Namespace) {
 		// Background
 		private void _Background()
 		{
-			_steps.BeforeScenario();
-
 			@foreach(var step in Model.BackgroundSteps) 
 			{
 				@if(step.Table != null) 
@@ -57,6 +55,8 @@ namespace @(Model.Namespace) {
 			}
 		@:public void @(sc.MethodName)()
 		@:{
+			@:_steps.ScenarioReset();
+			@:_steps.BeforeScenario();
 			@:this._Background();
 			@foreach(var step in sc.Steps) 
 			{

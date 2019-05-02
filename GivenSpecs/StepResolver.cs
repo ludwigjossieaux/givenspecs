@@ -8,18 +8,35 @@ using Xunit.Abstractions;
 
 namespace GivenSpecs
 {
+    public class ScenarioContext
+    {
+        public Dictionary<string, object> Data { get; set; }
+        public ScenarioContext()
+        {
+            this.Data = new Dictionary<string, object>();
+        }
+    }
+
     public class StepResolver
     {
         private readonly Assembly _assembly;
         private StepType _lastType;
         private ITestOutputHelper _output;
         private bool hasError = false;
+        private ScenarioContext _context;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
             _output = output;
             _assembly = assembly;
             _lastType = StepType.Given;
+            _context = new ScenarioContext();
+        }
+
+        public void ScenarioReset()
+        {
+            hasError = false;
+            _context = new ScenarioContext();
         }
 
         private List<MethodInfo> GetMethodsOfType<T>()
@@ -45,7 +62,11 @@ namespace GivenSpecs
                     {
                         groups.Add(table);
                     }
-                    var obj = Activator.CreateInstance(m.DeclaringType);
+                    var ctrParams = new object[]
+                    {
+                        _context
+                    };
+                    var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                     m.Invoke(obj, groups.ToArray());
                     return;
                 }
@@ -141,7 +162,11 @@ namespace GivenSpecs
             var methods = GetMethodsOfType<BeforeScenarioAttribute>();
             foreach(var m in methods)
             {
-                var obj = Activator.CreateInstance(m.DeclaringType);
+                var ctrParams = new object[]
+                {
+                    _context
+                };
+                var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
             }
         }
@@ -151,7 +176,11 @@ namespace GivenSpecs
             var methods = GetMethodsOfType<AfterScenarioAttribute>();
             foreach (var m in methods)
             {
-                var obj = Activator.CreateInstance(m.DeclaringType);
+                var ctrParams = new object[]
+                {
+                    _context
+                };
+                var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
             }
         }

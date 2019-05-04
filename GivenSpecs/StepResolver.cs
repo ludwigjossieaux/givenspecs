@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -24,6 +25,8 @@ namespace GivenSpecs
         private ITestOutputHelper _output;
         private bool hasError = false;
         private ScenarioContext _context;
+        private ReportedFeature _feature;
+        private ReportedScenario _scenario;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
@@ -33,10 +36,14 @@ namespace GivenSpecs
             _context = new ScenarioContext();
         }
 
-        public void ScenarioReset()
+        private FixtureClass _fixture;
+        public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, ReportedScenario scenario)
         {
             hasError = false;
             _context = new ScenarioContext();
+            _fixture = fixture;
+            _feature = feature;
+            _scenario = scenario;
         }
 
         private List<MethodInfo> GetMethodsOfType<T>()
@@ -48,7 +55,7 @@ namespace GivenSpecs
             return methods;
         }
 
-        private void MatchMethod<T>(List<MethodInfo> methods, string text, Table table) where T: StepBaseAttribute
+        private void MatchMethod<T>(List<MethodInfo> methods, string text, Table table, ReportedStep step) where T: StepBaseAttribute
         {
             foreach(var m in methods)
             {
@@ -57,6 +64,7 @@ namespace GivenSpecs
                 var match = rgx.Match(text);
                 if(match.Success)
                 {
+                   
                     var groups = match.Groups.Select(x => x.Value).Skip(1).ToList<object>();
                     if(table != null)
                     {
@@ -79,70 +87,65 @@ namespace GivenSpecs
             hasError = false;
         }
 
-        public void Given(string text, Table table = null)
+        private void ProcessStep<T>(string text, StepType step, Table table = null) where T: StepBaseAttribute
         {
-            _output.WriteLine($"-> Given {text}");
-            if(hasError)
+            var reportedStep = new ReportedStep()
+            {
+                Keyword = step.ToString() + " ",
+                Name = text,
+            };
+            _output.WriteLine($"-> {step.ToString()} {text}");
+            var stepStart = DateTime.UtcNow;
+            if (hasError)
             {
                 _output.WriteLine($"   ... skipped");
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "skipped",
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
                 return;
             }
-            _lastType = StepType.Given;
-            var methods = GetMethodsOfType<GivenAttribute>();
+            _lastType = step;
+            var methods = GetMethodsOfType<T>();
             try
             {
-                MatchMethod<GivenAttribute>(methods, text, table);
+                MatchMethod<T>(methods, text, table, reportedStep);
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "passed",
+                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
                 _output.WriteLine($"   ... ok");
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 hasError = true;
                 _output.WriteLine($"   ... error: {ex.Message}");
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "failed",
+                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds,
+                    ErrorMessage = ex.Message
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
             }
+        }
+
+        public void Given(string text, Table table = null)
+        {
+            ProcessStep<GivenAttribute>(text, StepType.Given, table);
         }
 
         public void When(string text, Table table = null)
         {
-            _output.WriteLine($"-> When {text}");
-            if (hasError)
-            {
-                _output.WriteLine($"   ... skipped");
-                return;
-            }
-            _lastType = StepType.When;
-            var methods = GetMethodsOfType<WhenAttribute>();
-            try
-            {
-                MatchMethod<WhenAttribute>(methods, text, table);
-                _output.WriteLine($"   ... ok");
-            }
-            catch (Exception ex)
-            {
-                hasError = true;
-                _output.WriteLine($"   ... error: {ex.Message}");
-            }
+            ProcessStep<WhenAttribute>(text, StepType.When, table);
         }
 
         public void Then(string text, Table table = null)
         {
-            _output.WriteLine($"-> Then {text}");
-            if (hasError)
-            {
-                _output.WriteLine($"   ... skipped");
-                return;
-            }
-            _lastType = StepType.Then;
-            var methods = GetMethodsOfType<ThenAttribute>();
-            try
-            {
-                MatchMethod<ThenAttribute>(methods, text, table);
-                _output.WriteLine($"   ... ok");
-            }
-            catch (Exception ex)
-            {
-                hasError = true;
-                _output.WriteLine($"   ... error: {ex.Message}");
-            }
+            ProcessStep<ThenAttribute>(text, StepType.Then, table);
         }
 
         public void And(string text, Table table = null)

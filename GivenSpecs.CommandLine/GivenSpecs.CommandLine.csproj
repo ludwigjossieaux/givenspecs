@@ -4,13 +4,14 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <PackAsTool>true</PackAsTool>
-    <ToolCommandNAme>givenspecs</ToolCommandNAme>
+    <ToolCommandName>dotnet-givenspecs</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <LangVersion>latest</LangVersion>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Authors>Ludwig Jossieaux</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -38,6 +39,10 @@
     <PackageReference Include="Gherkin" Version="6.0.0" />
     <PackageReference Include="Glob" Version="1.1.3" />
     <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GivenSpecs\GivenSpecs.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -19,14 +19,14 @@ namespace GivenSpecs.CommandLine.Generate
         public string Keyword { get; set; }
         public string Text { get; set; }
         public DataTable Table { get; set; }
-        public TableRow HeaderRow
+        public Gherkin.Ast.TableRow HeaderRow
         {
             get
             {
                 return Table.Rows.ToList().First();
             }
         }
-        public IEnumerable<TableRow> DataRows
+        public IEnumerable<Gherkin.Ast.TableRow> DataRows
         {
             get
             {
@@ -42,6 +42,8 @@ namespace GivenSpecs.CommandLine.Generate
         public string MethodName { get; set; }
         public List<XunitGenerator_Step> Steps { get; set; }
 
+        public ReportedScenario Reported { get; set; }
+
         public XunitGenerator_Scenario()
         {
             this.Tags = new List<string>();
@@ -55,6 +57,9 @@ namespace GivenSpecs.CommandLine.Generate
         public string Class { get; set; }
         public List<XunitGenerator_Step> BackgroundSteps { get; set; }
         public List<XunitGenerator_Scenario> Scenarios { get; set; }
+        public bool GenerateCollectionFixture { get; set; }
+
+        public ReportedFeature Reported { get; set; }
 
         public XunitGenerator_Feature()
         {
@@ -80,6 +85,15 @@ namespace GivenSpecs.CommandLine.Generate
             tmp = ti.ToTitleCase(tmp);
             tmp = tmp.Replace(" ", "");
             return tmp;
+        }
+
+        private string GetId(string input)
+        {
+            TextInfo ti = new CultureInfo("en-US", false).TextInfo;
+            string rExp = @"[^\w\d]";
+            string tmp = Regex.Replace(input, rExp, " ");
+            tmp = tmp.Replace(" ", "-");
+            return tmp.ToLower();
         }
 
         private string GetEmbeddedFile(string fileName)
@@ -113,10 +127,10 @@ namespace GivenSpecs.CommandLine.Generate
             return result;
         }
 
-        public string Generate(GherkinDocument doc)
+        public string Generate(GherkinDocument doc, string fileLocation, bool generateCollectionFixture = false)
         {
             if (doc.Feature == null) return "";
-
+            
             // Templates
             var classRazorTpl = GetEmbeddedFile("xunit.class.cstpl");
 
@@ -124,6 +138,17 @@ namespace GivenSpecs.CommandLine.Generate
 
             // Prepare data
             var model = new XunitGenerator_Feature();
+            model.GenerateCollectionFixture = generateCollectionFixture;
+
+            model.Reported = new ReportedFeature()
+            {
+                Id = GetId(doc.Feature.Name),
+                Uri = fileLocation,
+                Keyword = "Feature",
+                Line = doc.Feature.Location.Line,
+                Name = doc.Feature.Name
+            };
+
             model.Namespace = _opts.Namespace;
             model.Class = CleanUpString(doc.Feature.Name);
 
@@ -149,11 +174,27 @@ namespace GivenSpecs.CommandLine.Generate
                 if (child is Scenario scenario)
                 {
                     var s = new XunitGenerator_Scenario();
+
+                    s.Reported = new ReportedScenario()
+                    {
+                        Id = GetId(doc.Feature.Name) + ";" + GetId(scenario.Name),
+                        Keyword = "Scenario",
+                        Line = scenario.Location.Line,
+                        Name = scenario.Name,
+                        Type = "scenario"
+                    };
+
                     s.DisplayName = scenario.Name;
                     s.MethodName = CleanUpString(scenario.Name);
 
                     foreach (var tag in scenario.Tags)
                     {
+                        var reportedTag = new ReportedTag()
+                        {
+                            Line = tag.Location.Line,
+                            Name = tag.Name
+                        };
+                        s.Reported.Tags.Add(reportedTag);
                         s.Tags.Add(tag.Name.Replace("@", ""));
                     }
 

@@ -11,10 +11,22 @@ namespace GivenSpecs
 {
     public class ScenarioContext
     {
+        private readonly StepResolver _resolver;
+
         public Dictionary<string, object> Data { get; set; }
-        public ScenarioContext()
+
+        public ScenarioContext(StepResolver resolver)
         {
+            this._resolver = resolver;
             this.Data = new Dictionary<string, object>();
+        }
+        public void Attach(string data, string mimeType)
+        {
+            _resolver._currentEmbeddings.Add(new ReportedStepEmbeddings()
+            {
+                Data = data,
+                MimeType = mimeType
+            });
         }
     }
 
@@ -27,20 +39,21 @@ namespace GivenSpecs
         private ScenarioContext _context;
         private ReportedFeature _feature;
         private ReportedScenario _scenario;
+        public List<ReportedStepEmbeddings> _currentEmbeddings;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
             _output = output;
             _assembly = assembly;
             _lastType = StepType.Given;
-            _context = new ScenarioContext();
+            _context = new ScenarioContext(this);
         }
 
         private FixtureClass _fixture;
         public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, ReportedScenario scenario)
         {
             hasError = false;
-            _context = new ScenarioContext();
+            _context = new ScenarioContext(this);
             _fixture = fixture;
             _feature = feature;
             _scenario = scenario;
@@ -89,6 +102,7 @@ namespace GivenSpecs
 
         private void ProcessStep<T>(string text, StepType step, Table table = null) where T: StepBaseAttribute
         {
+            _currentEmbeddings = new List<ReportedStepEmbeddings>();
             var reportedStep = new ReportedStep()
             {
                 Keyword = step.ToString() + " ",
@@ -111,10 +125,11 @@ namespace GivenSpecs
             try
             {
                 MatchMethod<T>(methods, text, table, reportedStep);
+                reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
                     Status = "passed",
-                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds
+                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000
                 };
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
                 _output.WriteLine($"   ... ok");
@@ -123,10 +138,11 @@ namespace GivenSpecs
             {
                 hasError = true;
                 _output.WriteLine($"   ... error: {ex.Message}");
+                reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
                     Status = "failed",
-                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds,
+                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000,
                     ErrorMessage = ex.Message
                 };
                 _fixture.ReportStep(_feature, _scenario, reportedStep);

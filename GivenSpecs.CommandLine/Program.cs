@@ -1,6 +1,7 @@
 ﻿using CommandLine;
 using GivenSpecs.CommandLine.Generate;
 using GlobExpressions;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -45,13 +46,15 @@ namespace GivenSpecs.CommandLine
             var root = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, opts.FeaturePath));
             var files = root.GlobFiles("**/*.feature");
             var gen = new XunitGenerator(opts);
+            var first = true;
             foreach(var f in files)
             {
                 try
                 {
                     var parser = new Gherkin.Parser();
                     var content = parser.Parse(f.FullName);
-                    var test = gen.Generate(content);
+                    var relativePath = Path.Combine(opts.FeaturePath, f.Name); 
+                    var test = gen.Generate(content, relativePath, first);
                     var outputPath = f.FullName + ".cs";
                     File.WriteAllText(outputPath, test);
                 }
@@ -59,6 +62,7 @@ namespace GivenSpecs.CommandLine
                 {
                     throw;
                 }
+                first = false;
             }
             return 0;
         }

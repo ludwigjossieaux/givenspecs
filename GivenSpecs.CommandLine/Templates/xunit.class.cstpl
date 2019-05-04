@@ -5,15 +5,36 @@ using Xunit.Abstractions;
 using GivenSpecs;
 
 namespace @(Model.Namespace) {
+
+	@if(Model.GenerateCollectionFixture) {
+	@:[CollectionDefinition("GivenSpecsCollection")]
+    @:public class GivenSpecsCollectionFixture : ICollectionFixture<FixtureClass> { }
+	}
+
+	[Collection("GivenSpecsCollection")]
     public class @(Model.Class) {
 
         private readonly GivenSpecs.StepResolver _steps;
 		private readonly ITestOutputHelper _output;
+		private readonly GivenSpecs.FixtureClass _fixture;
+		private readonly ReportedFeature _feature;
 
-        public @(Model.Class)(ITestOutputHelper output)
+        public @(Model.Class)(ITestOutputHelper output, GivenSpecs.FixtureClass fixture)
         {
+			_fixture = fixture;
 			_output = output;
             _steps = new GivenSpecs.StepResolver(System.Reflection.Assembly.GetExecutingAssembly(), _output);
+
+			// Report feature
+            _feature = new ReportedFeature()
+            {
+                Uri = @@"@(Model.Reported.Uri)",
+                Id = "@(Model.Reported.Id)",
+                Keyword = "Feature",
+                Line = @(Model.Reported.Line),
+                Name = "@(Model.Reported.Name)"
+            };
+			_fixture.ReportFeature(_feature);
         }
 
 		// Background
@@ -55,7 +76,21 @@ namespace @(Model.Namespace) {
 			}
 		@:public void @(sc.MethodName)()
 		@:{
-			@:_steps.ScenarioReset();
+			// Report feature
+			@:var reportedScenario = new ReportedScenario() {
+				@:Id = "@(sc.Reported.Id)",
+				@:Keyword = "Scenario",
+				@:Line = @(sc.Reported.Line),
+				@:Name = "@(sc.Reported.Name)",
+				@:Type = "@(sc.Reported.Type)"
+			@:};
+			@foreach(var tag in sc.Reported.Tags) 
+			{
+			@:reportedScenario.Tags.Add(new ReportedTag() { Line = @(tag.Line), Name = "@(tag.Name)" });
+			}
+            @:_fixture.ReportScenario(_feature, reportedScenario);
+
+			@:_steps.ScenarioReset(_fixture, _feature, reportedScenario);
 			@:_steps.BeforeScenario();
 			@:this._Background();
 			@foreach(var step in sc.Steps) 

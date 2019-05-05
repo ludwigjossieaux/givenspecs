@@ -36,6 +36,7 @@ namespace GivenSpecs
         private StepType _lastType;
         private ITestOutputHelper _output;
         private bool hasError = false;
+        private string lastError = "";
         private ScenarioContext _context;
         private ReportedFeature _feature;
         private ReportedScenario _scenario;
@@ -53,6 +54,7 @@ namespace GivenSpecs
         public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, ReportedScenario scenario)
         {
             hasError = false;
+            lastError = "";
             _context = new ScenarioContext(this);
             _fixture = fixture;
             _feature = feature;
@@ -92,13 +94,14 @@ namespace GivenSpecs
                     return;
                 }
             }
-            throw new Exception($"no step for {typeof(T).ToString()} -> {text}");
+            throw new Exception($"no step for {step.Keyword}-> {text}");
         }
 
-        public void CleanErrorState()
-        {
-            hasError = false;
-        }
+        //public void CleanErrorState()
+        //{
+        //    hasError = false;
+        //    lastError = "";
+        //}
 
         private void ProcessStep<T>(string text, StepType step, Table table = null) where T: StepBaseAttribute
         {
@@ -109,6 +112,10 @@ namespace GivenSpecs
                 Name = text,
             };
             _output.WriteLine($"-> {step.ToString()} {text}");
+            if(table != null)
+            {
+                _output.WriteLine(table.ToString());
+            }
             var stepStart = DateTime.UtcNow;
             if (hasError)
             {
@@ -137,7 +144,8 @@ namespace GivenSpecs
             catch (Exception ex)
             {
                 hasError = true;
-                _output.WriteLine($"   ... error: {ex.Message}");
+                lastError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                _output.WriteLine($"   ... error: {lastError}");
                 reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
@@ -201,6 +209,11 @@ namespace GivenSpecs
                 };
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
+            }
+
+            if(hasError)
+            {
+                throw new Exception(lastError);
             }
         }
     }

@@ -111,6 +111,32 @@ namespace GivenSpecs
 
     }
 
+    public class ReportedArgument_Table: ReportedArgument
+    {
+        [JsonProperty("rows")]
+        public List<ReportedArgument_TableRow> Rows { get; set; }
+        public ReportedArgument_Table()
+        {
+            this.Rows = new List<ReportedArgument_TableRow>();
+        }
+    }
+
+    public class ReportedArgument_DocString : ReportedArgument
+    {
+        [JsonProperty("content")]
+        public string Content { get; set; }
+    }
+
+    public class ReportedArgument_TableRow
+    {
+        [JsonProperty("cells")]
+        public List<string> Cells { get; set; }
+        public ReportedArgument_TableRow()
+        {
+            this.Cells = new List<string>();
+        }
+    }
+
     public class ReportedTag
     {
         [JsonProperty("name")]

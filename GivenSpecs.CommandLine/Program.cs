@@ -53,8 +53,7 @@ namespace GivenSpecs.CommandLine
                 {
                     var parser = new Gherkin.Parser();
                     var content = parser.Parse(f.FullName);
-                    var relativePath = Path.Combine(opts.FeaturePath, f.Name); 
-                    var test = gen.Generate(content, relativePath, first);
+                    var test = gen.Generate(content, f.FullName, first);
                     var outputPath = f.FullName + ".cs";
                     File.WriteAllText(outputPath, test);
                 }

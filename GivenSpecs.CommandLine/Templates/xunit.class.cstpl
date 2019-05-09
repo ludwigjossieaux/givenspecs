@@ -42,6 +42,13 @@ namespace @(Model.Namespace) {
 		{
 			@foreach(var step in Model.BackgroundSteps) 
 			{
+				@if(step.HasMultilineText)
+				{
+			@:string txt@(step.Random) = @@"@(step.MultilineText)";
+				} else {
+			@:string txt@(step.Random) = null;	
+				}
+
 				@if(step.Table != null) 
 				{
 			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
@@ -59,9 +66,9 @@ namespace @(Model.Namespace) {
 					}
 			@:});
 				}
-			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", table@(step.Random));
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", txt@(step.Random), table@(step.Random));
 				} else {
-			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", null);	
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", txt@(step.Random), null);	
 				}
 			}
 		}
@@ -95,6 +102,13 @@ namespace @(Model.Namespace) {
 			@:this._Background();
 			@foreach(var step in sc.Steps) 
 			{
+				@if(step.HasMultilineText)
+				{
+			@:string txt@(step.Random) = @@"@Raw(step.MultilineText)";
+				} else {
+			@:string txt@(step.Random) = null;	
+				}
+
 				@if(step.Table != null) 
 				{
 			@:var table@(step.Random) = new GivenSpecs.Table(new string[] {
@@ -112,9 +126,9 @@ namespace @(Model.Namespace) {
 					}
 			@:});
 				}
-			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", table@(step.Random));
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", txt@(step.Random), table@(step.Random));
 				} else {
-			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", null);	
+			@:_steps.@(step.Keyword)(@@"@Raw(step.Text)", txt@(step.Random), null);	
 				}
 			}
 			@:_steps.AfterScenario();

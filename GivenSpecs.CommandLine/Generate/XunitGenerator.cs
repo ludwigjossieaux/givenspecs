@@ -19,6 +19,8 @@ namespace GivenSpecs.CommandLine.Generate
         public string Keyword { get; set; }
         public string Text { get; set; }
         public DataTable Table { get; set; }
+        public bool HasMultilineText { get; set; } 
+        public string MultilineText { get; set; }
         public Gherkin.Ast.TableRow HeaderRow
         {
             get
@@ -123,6 +125,11 @@ namespace GivenSpecs.CommandLine.Generate
             {
                // result.hasTable = true;
                 result.Table = dt;
+            }
+            if (step.Argument is DocString ds)
+            {
+                result.HasMultilineText = true;
+                result.MultilineText = ds.Content;
             }
             return result;
         }

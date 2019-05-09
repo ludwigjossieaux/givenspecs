@@ -70,7 +70,7 @@ namespace GivenSpecs
             return methods;
         }
 
-        private void MatchMethod<T>(List<MethodInfo> methods, string text, Table table, ReportedStep step) where T: StepBaseAttribute
+        private void MatchMethod<T>(List<MethodInfo> methods, string text, string multiline, Table table, ReportedStep step) where T: StepBaseAttribute
         {
             foreach(var m in methods)
             {
@@ -81,6 +81,10 @@ namespace GivenSpecs
                 {
                    
                     var groups = match.Groups.Select(x => x.Value).Skip(1).ToList<object>();
+                    if(multiline != null)
+                    {
+                        groups.Add(multiline);
+                    }
                     if(table != null)
                     {
                         groups.Add(table);
@@ -103,7 +107,7 @@ namespace GivenSpecs
         //    lastError = "";
         //}
 
-        private void ProcessStep<T>(string text, StepType step, Table table = null) where T: StepBaseAttribute
+        private void ProcessStep<T>(string text, StepType step, string multiline, Table table = null) where T: StepBaseAttribute
         {
             _currentEmbeddings = new List<ReportedStepEmbeddings>();
             var reportedStep = new ReportedStep()
@@ -112,9 +116,35 @@ namespace GivenSpecs
                 Name = text,
             };
             _output.WriteLine($"-> {step.ToString()} {text}");
+            if (multiline != null)
+            {
+                _output.WriteLine(multiline);
+                var reportedDocstring = new ReportedArgument_DocString()
+                {
+                    Content = multiline
+                };
+                reportedStep.Arguments.Add(reportedDocstring);
+            }
             if(table != null)
             {
                 _output.WriteLine(table.ToString());
+                var reportedTable = new ReportedArgument_Table();
+                var reportedTable_RowHeader = new ReportedArgument_TableRow();
+                foreach (var h in table.Header)
+                {
+                    reportedTable_RowHeader.Cells.Add(h);
+                }
+                reportedTable.Rows.Add(reportedTable_RowHeader);
+                foreach (var r in table.Rows)
+                {
+                    var reportedTable_Row = new ReportedArgument_TableRow();
+                    foreach(var cell in r)
+                    {
+                        reportedTable_Row.Cells.Add(cell.Value);
+                    }
+                    reportedTable.Rows.Add(reportedTable_Row);
+                }
+                reportedStep.Arguments.Add(reportedTable);
             }
             var stepStart = DateTime.UtcNow;
             if (hasError)
@@ -131,7 +161,7 @@ namespace GivenSpecs
             var methods = GetMethodsOfType<T>();
             try
             {
-                MatchMethod<T>(methods, text, table, reportedStep);
+                MatchMethod<T>(methods, text, multiline, table, reportedStep);
                 reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
@@ -157,31 +187,31 @@ namespace GivenSpecs
             }
         }
 
-        public void Given(string text, Table table = null)
+        public void Given(string text, string multiline, Table table = null)
         {
-            ProcessStep<GivenAttribute>(text, StepType.Given, table);
+            ProcessStep<GivenAttribute>(text, StepType.Given, multiline, table);
         }
 
-        public void When(string text, Table table = null)
+        public void When(string text, string multiline, Table table = null)
         {
-            ProcessStep<WhenAttribute>(text, StepType.When, table);
+            ProcessStep<WhenAttribute>(text, StepType.When, multiline, table);
         }
 
-        public void Then(string text, Table table = null)
+        public void Then(string text, string multiline, Table table = null)
         {
-            ProcessStep<ThenAttribute>(text, StepType.Then, table);
+            ProcessStep<ThenAttribute>(text, StepType.Then, multiline, table);
         }
 
-        public void And(string text, Table table = null)
+        public void And(string text, string multiline, Table table = null)
         {
-            if (_lastType == StepType.Given) Given(text, table);
-            if (_lastType == StepType.When) When(text, table);
-            if (_lastType == StepType.Then) Then(text, table);
+            if (_lastType == StepType.Given) Given(text, multiline, table);
+            if (_lastType == StepType.When) When(text, multiline, table);
+            if (_lastType == StepType.Then) Then(text, multiline, table);
         }
 
-        public void But(string text, Table table = null)
+        public void But(string text, string multiline, Table table = null)
         {
-            And(text, table);
+            And(text, multiline, table);
         }
 
         public void BeforeScenario()

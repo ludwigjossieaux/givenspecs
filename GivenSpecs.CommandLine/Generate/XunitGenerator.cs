@@ -8,8 +8,10 @@ using System.Dynamic;
 using System.Reflection;
 using System.IO;
 using System.Linq;
-using RazorLight;
 using System.Threading.Tasks;
+using Scriban;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis;
 
 namespace GivenSpecs.CommandLine.Generate
 {
@@ -37,19 +39,52 @@ namespace GivenSpecs.CommandLine.Generate
         }
     }
 
+    public class XunitGenerator_ScenarioExample
+    {
+        public List<string> Values { get; set; }
+        public string DataString
+        {
+            get
+            {
+                return string.Join(", ", Values.Select(x => $"@\"{x}\""));
+            }
+        }
+        public XunitGenerator_ScenarioExample()
+        {
+            this.Values = new List<string>();
+        }
+    }
+
     public class XunitGenerator_Scenario
     {
         public string DisplayName { get; set; }
         public List<string> Tags { get; set; }
         public string MethodName { get; set; }
         public List<XunitGenerator_Step> Steps { get; set; }
-
+        public List<(string, string)> Parameters { get; set; }
+        public List<XunitGenerator_ScenarioExample> Examples { get; set; }
         public ReportedScenario Reported { get; set; }
+        public string ParametersString
+        {
+            get
+            {
+                return string.Join(", ", Parameters.Select(x => $"string {x.Item2}"));
+            }
+        }
+        public string ParametersMap
+        {
+            get
+            {
+                return string.Join(", ", Parameters.Select(x => $"(@\"{x.Item1}\", {x.Item2})"));
+            }
+        }
 
         public XunitGenerator_Scenario()
         {
             this.Tags = new List<string>();
             this.Steps = new List<XunitGenerator_Step>();
+            this.Parameters = new List<(string, string)>();
+            this.Examples = new List<XunitGenerator_ScenarioExample>();
         }
     }
 
@@ -79,7 +114,7 @@ namespace GivenSpecs.CommandLine.Generate
             _opts = opts;
         }
 
-        private string CleanUpString(string input)
+        private string ToMethodString(string input)
         {
             TextInfo ti = new CultureInfo("en-US", false).TextInfo;
             string rExp = @"[^\w\d]";
@@ -87,6 +122,12 @@ namespace GivenSpecs.CommandLine.Generate
             tmp = ti.ToTitleCase(tmp);
             tmp = tmp.Replace(" ", "");
             return tmp;
+        }
+
+        private string ToParamString(string input)
+        {
+            var tmp = ToMethodString(input);
+            return char.ToLower(tmp[0]) + tmp.Substring(1);
         }
 
         private string GetId(string input)
@@ -112,6 +153,20 @@ namespace GivenSpecs.CommandLine.Generate
             return file;
         }
         
+        private void ProcessTags(IEnumerable<Tag> tags, XunitGenerator_Scenario s)
+        {
+            foreach (var tag in tags)
+            {
+                var reportedTag = new ReportedTag()
+                {
+                    Line = tag.Location.Line,
+                    Name = tag.Name
+                };
+                s.Reported.Tags.Add(reportedTag);
+                s.Tags.Add(tag.Name.Replace("@", ""));
+            }
+        }
+
         private XunitGenerator_Step ProcessStep(Step step)
         {
             var rand = new Random();
@@ -134,12 +189,67 @@ namespace GivenSpecs.CommandLine.Generate
             return result;
         }
 
+        private XunitGenerator_Scenario GenerateScenario(Scenario scenario, string featureId, Examples exampleTable)
+        {
+            var s = new XunitGenerator_Scenario();
+
+            var name = scenario.Name + ((exampleTable != null && !string.IsNullOrWhiteSpace(exampleTable.Name)) ? $" - {exampleTable.Name}" : "");
+            var id = featureId + ";" + GetId(name);
+
+            s.Reported = new ReportedScenario()
+            {
+                Id = id,
+                Keyword = "Scenario",
+                Line = scenario.Location.Line,
+                Name = name,
+                Type = "scenario"
+            };
+
+            s.DisplayName = name;
+            s.MethodName = ToMethodString(name);
+
+            this.ProcessTags(scenario.Tags, s);
+
+            if(exampleTable != null)
+            {
+                this.ProcessTags(exampleTable.Tags, s);
+                foreach (var param in exampleTable.TableHeader.Cells)
+                {
+                    var value = ToParamString(param.Value);
+                    s.Parameters.Add((param.Value, value));
+                }
+                if(s.Parameters.Any())
+                {
+                    s.Parameters = s.Parameters.Prepend(("givenSpecsIdx", "givenSpecsIdx")).ToList();
+                }
+                var givenSpecsIdx = 1;
+                foreach(var row in exampleTable.TableBody)
+                {
+                    var dataExample = new XunitGenerator_ScenarioExample();
+                    dataExample.Values.Add(givenSpecsIdx.ToString());
+                    foreach(var cell in row.Cells)
+                    {
+                        dataExample.Values.Add(cell.Value);
+                    }
+                    s.Examples.Add(dataExample);
+                    givenSpecsIdx++;
+                }
+            }
+
+            foreach (var step in scenario.Steps)
+            {
+                s.Steps.Add(this.ProcessStep(step));
+            }
+
+            return s;
+        }
+
         public string Generate(GherkinDocument doc, string fileLocation, bool generateCollectionFixture = false)
         {
             if (doc.Feature == null) return "";
             
             // Templates
-            var classRazorTpl = GetEmbeddedFile("xunit.class.cstpl");
+            var classTpl = GetEmbeddedFile("xunit.class.tpl");
 
             var sb = new StringBuilder();
 
@@ -157,7 +267,7 @@ namespace GivenSpecs.CommandLine.Generate
             };
 
             model.Namespace = _opts.Namespace;
-            model.Class = CleanUpString(doc.Feature.Name);
+            model.Class = ToMethodString(doc.Feature.Name);
 
             // Background
             foreach (var child in doc.Feature.Children)
@@ -180,48 +290,32 @@ namespace GivenSpecs.CommandLine.Generate
             {
                 if (child is Scenario scenario)
                 {
-                    var s = new XunitGenerator_Scenario();
-
-                    s.Reported = new ReportedScenario()
+                    if (null != scenario.Examples && scenario.Examples.Count() > 0)
                     {
-                        Id = GetId(doc.Feature.Name) + ";" + GetId(scenario.Name),
-                        Keyword = "Scenario",
-                        Line = scenario.Location.Line,
-                        Name = scenario.Name,
-                        Type = "scenario"
-                    };
-
-                    s.DisplayName = scenario.Name;
-                    s.MethodName = CleanUpString(scenario.Name);
-
-                    foreach (var tag in scenario.Tags)
-                    {
-                        var reportedTag = new ReportedTag()
+                        foreach (var exampleTable in scenario.Examples)
                         {
-                            Line = tag.Location.Line,
-                            Name = tag.Name
-                        };
-                        s.Reported.Tags.Add(reportedTag);
-                        s.Tags.Add(tag.Name.Replace("@", ""));
+                            var s = GenerateScenario(scenario, GetId(doc.Feature.Name), exampleTable);
+                            scenarios.Add(s);
+                        }
                     }
-
-                    foreach(var step in scenario.Steps)
+                    else
                     {
-                        s.Steps.Add(this.ProcessStep(step));
+                        var s = GenerateScenario(scenario, GetId(doc.Feature.Name), null);
+                        scenarios.Add(s);
                     }
-                
-                    scenarios.Add(s);
                     continue;
                 }
             }
             model.Scenarios = scenarios;
 
-            var engine = new RazorLightEngineBuilder()
-              .UseMemoryCachingProvider()
-              .Build();
-            var result = (engine.CompileRenderAsync("xunitclass", classRazorTpl, model)).Result;
+            var template = Template.Parse(classTpl);
+            var result = template.Render(model);
 
-            return result;
+            var tree = CSharpSyntaxTree.ParseText(result);
+            var root = tree.GetRoot().NormalizeWhitespace();
+            var ret = root.ToFullString();
+
+            return ret;
         }
     }
 }

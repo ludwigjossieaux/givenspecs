@@ -31,6 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Templates\xunit.class.tpl" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Templates\xunit.class.cstpl" />
   </ItemGroup>
 
@@ -38,7 +42,9 @@
     <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="Gherkin" Version="6.0.0" />
     <PackageReference Include="Glob" Version="1.1.3" />
-    <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Scriban" Version="2.0.1" />
   </ItemGroup>
 
   <ItemGroup>

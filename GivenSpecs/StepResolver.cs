@@ -41,6 +41,7 @@ namespace GivenSpecs
         private ReportedFeature _feature;
         private ReportedScenario _scenario;
         public List<ReportedStepEmbeddings> _currentEmbeddings;
+        private List<(string, string)> _replacements;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
@@ -51,7 +52,7 @@ namespace GivenSpecs
         }
 
         private FixtureClass _fixture;
-        public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, ReportedScenario scenario)
+        public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, List<(string, string)> replacements, ReportedScenario scenario)
         {
             hasError = false;
             lastError = "";
@@ -59,6 +60,7 @@ namespace GivenSpecs
             _fixture = fixture;
             _feature = feature;
             _scenario = scenario;
+            _replacements = replacements;
         }
 
         private List<MethodInfo> GetMethodsOfType<T>()
@@ -79,7 +81,6 @@ namespace GivenSpecs
                 var match = rgx.Match(text);
                 if(match.Success)
                 {
-                   
                     var groups = match.Groups.Select(x => x.Value).Skip(1).ToList<object>();
                     if(multiline != null)
                     {
@@ -101,14 +102,13 @@ namespace GivenSpecs
             throw new Exception($"no step for {step.Keyword}-> {text}");
         }
 
-        //public void CleanErrorState()
-        //{
-        //    hasError = false;
-        //    lastError = "";
-        //}
-
         private void ProcessStep<T>(string text, StepType step, string multiline, Table table = null) where T: StepBaseAttribute
         {
+            foreach (var r in _replacements)
+            {
+                text = text.Replace($"<{r.Item1}>", r.Item2);
+            }
+
             _currentEmbeddings = new List<ReportedStepEmbeddings>();
             var reportedStep = new ReportedStep()
             {
@@ -240,7 +240,6 @@ namespace GivenSpecs
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
             }
-
             if(hasError)
             {
                 throw new Exception(lastError);

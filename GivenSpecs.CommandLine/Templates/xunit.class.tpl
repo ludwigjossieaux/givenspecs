@@ -40,29 +40,28 @@ _fixture.ReportFeature(_feature);
 private void _Background()
 {
 {{ for step in background_steps }}
-{{ if step.has_multiline_text }}
-string txt{{ step.random }} = @"{{ step.multiline_text }}";
-{{ else }}
-string txt{{ step.random }} = null;
-{{ end }}
-
-{{ if step.table != null }}
-var table{{ step.random }} = new GivenSpecs.Table(new string[] {
-{{ for header in step.header_row.cells }}
-"{{ header.value }}",
-{{ end }}
-});
-{{ for table_row in step.data_rows }}
-table{{ step.random }}.AddRow(new string[] {
-{{ for cell in table_row.cells }}
-"{{ cell.value }}",
-{{ end }}
-});
-{{ end }}
-{{ else }}
-GivenSpecs.Table table{{ step.random }} = null;
-{{ end }}
-_steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
+    {{ if step.has_multiline_text }}
+    string txt{{ step.random }} = @"{{ step.multiline_text }}";
+    {{ else }}
+    string txt{{ step.random }} = null;
+    {{ end }}
+    {{ if step.table }}
+        var table{{ step.random }} = new GivenSpecs.Table(new string[] {
+            {{ for header in step.header_row.cells }}
+                "{{ header.value }}",
+            {{ end }}
+        });
+        {{ for table_row in step.data_rows }}
+            table{{ step.random }}.AddRow(new string[] {
+            {{ for cell in table_row.cells }}
+                "{{ cell.value }}",
+            {{ end }}
+            });
+        {{ end }}
+    {{ else }}
+        GivenSpecs.Table table{{ step.random }} = null;
+    {{ end }}
+    _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
 {{ end }}
 }
 
@@ -103,30 +102,30 @@ _steps.BeforeScenario();
 this._Background();
 {{ for step in sc.steps }}
 
-{{ if step.has_multiline_text }}
-string txt{{ step.random }} = @"{{ step.multiline_text }}";
-{{ else }}
-string txt{{ step.random }} = null;
-{{ end }}
+    {{ if step.has_multiline_text }}
+    string txt{{ step.random }} = @"{{ step.multiline_text }}";
+    {{ else }}
+    string txt{{ step.random }} = null;
+    {{ end }}
 
-{{ if step.table != null }}
-var table{{ step.random }} = new GivenSpecs.Table(new string[] {
-{{ for header in step.header_row.cells }}
-"{{ header.value }}",
-{{ end }}
-});
-{{ for table_row in step.data_rows }}
-table{{ step.random }}.AddRow(new string[] {
-{{ for cell in table_row.cells }}
-"{{ cell.value }}",
-{{ end }}
-});
-{{ end }}
-{{ else }}
-GivenSpecs.Table table{{ step.random }} = null;
-{{ end }}
+    {{ if step.table }}
+        var table{{ step.random }} = new GivenSpecs.Table(new string[] {
+        {{ for header in step.header_row.cells }}
+            "{{ header.value }}",
+        {{ end }}
+        });
+        {{ for table_row in step.data_rows }}
+            table{{ step.random }}.AddRow(new string[] {
+                {{ for cell in table_row.cells }}
+                    "{{ cell.value }}",
+                {{ end }}
+            });
+        {{ end }}
+    {{ else }}
+        GivenSpecs.Table table{{ step.random }} = null;
+    {{ end }}
 
-_steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
+    _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
 {{ end }}
 _steps.AfterScenario();
 }

@@ -20,6 +20,13 @@ namespace GivenSpecs
             this._resolver = resolver;
             this.Data = new Dictionary<string, object>();
         }
+
+        public List<string> CurrentScenario_Tags()
+        {
+            var scenario = _resolver.GetReportedScenario();
+            return scenario.Tags.Select(x => x.Name).ToList();
+        }
+
         public void Attach(string data, string mimeType)
         {
             _resolver._currentEmbeddings.Add(new ReportedStepEmbeddings()
@@ -49,6 +56,11 @@ namespace GivenSpecs
             _assembly = assembly;
             _lastType = StepType.Given;
             _context = new ScenarioContext(this);
+        }
+
+        public ReportedScenario GetReportedScenario()
+        {
+            return _scenario;
         }
 
         private FixtureClass _fixture;

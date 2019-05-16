@@ -44,6 +44,14 @@ namespace GivenSpecs
                 this.header = header;
             }
 
+            public void ApplyReplacements(Func<string, string> applyReplacements)
+            {
+                foreach(var r in rows)
+                {
+                    r.ApplyReplacements(applyReplacements);
+                }
+            }
+
             public bool ContainsColumn(string column)
             {
                 return GetHeaderIndex(column, false) >= 0;
@@ -227,7 +235,15 @@ namespace GivenSpecs
                 }
             }
 
-            public int Count
+        public void ApplyReplacements(Func<string, string> applyReplacements)
+        {
+            for(var i = 0; i < items.Length; i++)
+            {
+                items[i] = applyReplacements(items[i]);
+            }
+        }
+
+        public int Count
             {
                 get { return items.Length; }
             }

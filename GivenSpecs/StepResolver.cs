@@ -116,10 +116,20 @@ namespace GivenSpecs
 
         private void ProcessStep<T>(string text, StepType step, string multiline, Table table = null) where T: StepBaseAttribute
         {
-            foreach (var r in _replacements)
-            {
-                text = text.Replace($"<{r.Item1}>", r.Item2);
-            }
+            var applyReplacements = new Func<string, string>((string input) => {
+                if(_replacements == null || _replacements.Count == 0)
+                {
+                    return input;
+                }
+                var result = input;
+                foreach (var r in _replacements)
+                {
+                    result = result.Replace($"<{r.Item1}>", r.Item2);
+                }
+                return result;
+            });
+
+            text = applyReplacements(text);
 
             _currentEmbeddings = new List<ReportedStepEmbeddings>();
             var reportedStep = new ReportedStep()
@@ -130,6 +140,8 @@ namespace GivenSpecs
             _output.WriteLine($"-> {step.ToString()} {text}");
             if (multiline != null)
             {
+                multiline = applyReplacements(multiline);
+
                 _output.WriteLine(multiline);
                 var reportedDocstring = new ReportedArgument_DocString()
                 {
@@ -139,6 +151,8 @@ namespace GivenSpecs
             }
             if(table != null)
             {
+                table.ApplyReplacements(applyReplacements);
+
                 _output.WriteLine(table.ToString());
                 var reportedTable = new ReportedArgument_Table();
                 var reportedTable_RowHeader = new ReportedArgument_TableRow();

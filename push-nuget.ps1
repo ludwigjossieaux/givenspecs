@@ -1,6 +1,6 @@
 # parameters
-$version = '0.1.12'
 $key = '__KEY__'
+$version = '0.1.15'
 
 # apply version
 
@@ -22,7 +22,8 @@ Push-Location
 
 cd "GivenSpecs.CommandLine"
 dotnet build --configuration=Release -p:Version=$version
-nuget.exe pack -OutputDirectory ./nupkg -IncludeReferencedProjects -Version $version
+dotnet pack -c Release
+#nuget.exe pack -OutputDirectory ./nupkg -IncludeReferencedProjects -Version $version
 
 Pop-Location
 
@@ -35,7 +36,7 @@ dotnet nuget push GivenSpecs.$version.nupkg -k $key -s https://api.nuget.org/v3/
 
 Pop-Location
 
-# push 
+# push GivenSpecs.CommandLine
 
 Push-Location
 

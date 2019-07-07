@@ -1,13 +1,12 @@
 ﻿using Xunit;
 using Xunit.Abstractions;
-using GivenSpecs;
 using System.Collections.Generic;
 
 namespace {{ namespace }} {
 
 {{ if generate_collection_fixture }}
 [CollectionDefinition("GivenSpecsCollection")]
-public class GivenSpecsCollectionFixture : ICollectionFixture<FixtureClass> { }
+public class GivenSpecsCollectionFixture : ICollectionFixture<GivenSpecs.FixtureClass> { }
 {{ end }}
 
 [Collection("GivenSpecsCollection")]
@@ -16,7 +15,7 @@ public class {{ class }} {
 private readonly GivenSpecs.StepResolver _steps;
 private readonly ITestOutputHelper _output;
 private readonly GivenSpecs.FixtureClass _fixture;
-private readonly ReportedFeature _feature;
+private readonly GivenSpecs.Application.Reporting.ReportedFeature _feature;
 
 public {{ class }}(ITestOutputHelper output, GivenSpecs.FixtureClass fixture)
 {
@@ -25,7 +24,7 @@ _output = output;
 _steps = new GivenSpecs.StepResolver(System.Reflection.Assembly.GetExecutingAssembly(), _output);
 
 // Report feature
-_feature = new ReportedFeature()
+_feature = new GivenSpecs.Application.Reporting.ReportedFeature()
 {
 Uri = @"{{ reported.uri }}",
 Id = "{{ reported.id }}",
@@ -46,7 +45,7 @@ private void _Background()
     string txt{{ step.random }} = null;
     {{ end }}
     {{ if step.table }}
-        var table{{ step.random }} = new GivenSpecs.Table(new string[] {
+        var table{{ step.random }} = new  GivenSpecs.Application.Tables.Table(new string[] {
             {{ for header in step.header_row.cells }}
                 "{{ header.value }}",
             {{ end }}
@@ -59,7 +58,7 @@ private void _Background()
             });
         {{ end }}
     {{ else }}
-        GivenSpecs.Table table{{ step.random }} = null;
+         GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
     {{ end }}
     _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
 {{ end }}
@@ -82,10 +81,10 @@ public void {{ sc.method_name }}({{ sc.parameters_string}})
 {
 
 {{ if sc.examples.empty? }}
-string givenSpecsIdx = "";
+string givenSpecsIdx = "0";
 {{ end }}
 
-var reportedScenario = new ReportedScenario() {
+var reportedScenario = new GivenSpecs.Application.Reporting.ReportedScenario() {
 Id = $"{{ sc.reported.id }}-{givenSpecsIdx}",
 Keyword = "Scenario",
 Line = {{ sc.reported.line }},
@@ -93,7 +92,7 @@ Name = $"{{ sc.reported.name }} [{givenSpecsIdx}]",
 Type = "{{ sc.reported.type }}"
 };
 {{ for tag in sc.reported.tags }}
-reportedScenario.Tags.Add(new ReportedTag() { Line = {{ tag.line }}, Name = "{{ tag.name }}" });
+reportedScenario.Tags.Add(new GivenSpecs.Application.Reporting.ReportedTag() { Line = {{ tag.line }}, Name = "{{ tag.name }}" });
 {{ end }}
 _fixture.ReportScenario(_feature, reportedScenario);
 var replacements = new List<(string, string)>() { {{ sc.parameters_map }} };
@@ -109,7 +108,7 @@ this._Background();
     {{ end }}
 
     {{ if step.table }}
-        var table{{ step.random }} = new GivenSpecs.Table(new string[] {
+        var table{{ step.random }} = new GivenSpecs.Application.Tables.Table(new string[] {
         {{ for header in step.header_row.cells }}
             "{{ header.value }}",
         {{ end }}
@@ -122,7 +121,7 @@ this._Background();
             });
         {{ end }}
     {{ else }}
-        GivenSpecs.Table table{{ step.random }} = null;
+        GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
     {{ end }}
 
     _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});

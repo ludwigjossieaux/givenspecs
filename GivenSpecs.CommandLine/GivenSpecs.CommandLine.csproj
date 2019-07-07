@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -8,18 +7,16 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <LangVersion>latest</LangVersion>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <Version>0.1.11</Version>
+    <Version>0.1.12</Version>
     <Authors>Ludwig Jossieaux</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="nupkg\**" />
     <EmbeddedResource Remove="nupkg\**" />
     <None Remove="nupkg\**" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="Gherkin" Version="6.0.0" />
@@ -29,11 +26,9 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="Scriban" Version="2.1.0" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\GivenSpecs.Application\GivenSpecs.Application.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="mscorlib">
       <HintPath>mscorlib</HintPath>
@@ -45,9 +40,7 @@
       <HintPath>System.Core</HintPath>
     </Reference>
   </ItemGroup>
-
   <ItemGroup>
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
-
 </Project>

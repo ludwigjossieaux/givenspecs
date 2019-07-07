@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>GivenSpecs.CommandLine</id>
+    <version>0.0.0</version>
+    <title>GivenSpecs.CommandLine</title>
+    <authors>Ludwig Jossieaux</authors>
+    <owners>Ludwig Jossieaux</owners>
+    <projectUrl>https://github.com/ludwigjossieaux/givenspecs</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A gherkin compatible testing framework for .NET core</description>
+    <releaseNotes></releaseNotes>
+    <copyright></copyright>
+    <tags></tags>
+  </metadata>
+</package>

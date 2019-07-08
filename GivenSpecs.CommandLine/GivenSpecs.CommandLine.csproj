@@ -7,7 +7,7 @@
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <LangVersion>latest</LangVersion>
     <PreserveCompilationContext>true</PreserveCompilationContext>
-    <Version>0.1.15</Version>
+    <Version>0.1.19</Version>
     <Authors>Ludwig Jossieaux</Authors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PreserveCompilationContext>true</PreserveCompilationContext>

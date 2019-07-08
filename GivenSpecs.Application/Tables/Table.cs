@@ -5,29 +5,42 @@ using System.Linq;
 
 namespace GivenSpecs.Application.Tables
 {
+    public class TableRow
+    {
+        List<string> _headers;
+        public List<TableCell> Cells { get; set; }
+
+        public string[] GetValuesAsArray()
+        {
+            var list = Cells.Select(x => x.Value);
+            return list.ToArray();
+        }
+
+        public string Get(int idx)
+        {
+            return Cells[idx].Value;
+        }
+
+        public string Get(string header)
+        {
+            var pos = _headers.IndexOf(header);
+            return Cells[pos].Value;
+        }
+
+        public TableRow(List<string> headers)
+        {
+            this._headers = headers;
+            Cells = new List<TableCell>();
+        }
+    }
+
+    public class TableCell
+    {
+        public string Value { get; set; }
+    }
+
     public class Table
     {
-        public class TableRow
-        {
-            public List<TableCell> Cells { get; set; }
-
-            public string[] GetValuesAsArray()
-            {
-                var list = Cells.Select(x => x.Value);
-                return list.ToArray();
-            }
-
-            public TableRow()
-            {
-                Cells = new List<TableCell>();
-            }
-        }
-
-        public class TableCell
-        {
-            public string Value { get; set; }
-        }
-
         List<string> _headers;
         Dictionary<string, string> _entries;
         int rowCount = 0;
@@ -57,13 +70,21 @@ namespace GivenSpecs.Application.Tables
             foreach (var idx in Enumerable.Range(0, rowCount))
             {
                 var values = _entries.Where(x => x.Key.StartsWith($"{idx}--"));
-                var row = new TableRow();
+                var row = new TableRow(_headers);
                 foreach (var h in _headers)
                 {
                     var cellValue = values.FirstOrDefault(x => x.Key.EndsWith($"--{h}")).Value;
                     row.Cells.Add(new TableCell() { Value = cellValue });
                 }
                 yield return row;
+            }
+        }
+
+        public List<TableRow> Rows
+        {
+            get
+            {
+                return this.GetRows().ToList();
             }
         }
 

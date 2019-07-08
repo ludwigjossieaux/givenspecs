@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>GivenSpecs</id>
+    <version>0.0.0</version>
+    <title>GivenSpecs</title>
+    <authors>Ludwig Jossieaux</authors>
+    <owners>Ludwig Jossieaux</owners>
+    <projectUrl>https://github.com/ludwigjossieaux/givenspecs</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A gherkin compatible testing framework for .NET core</description>
+    <releaseNotes></releaseNotes>
+    <copyright></copyright>
+    <tags></tags>
+    <dependencies>
+      <dependency id="ConsoleTables" version="2.3.0" />
+      <dependency id="FastDeepCloner" version="1.2.4" />
+	  <dependency id="Newtonsoft.Json" version="12.0.2" />
+    </dependencies>
+  </metadata>
+
+</package>

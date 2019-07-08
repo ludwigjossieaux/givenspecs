@@ -1,46 +1,19 @@
-﻿using System;
+﻿using GivenSpecs.Application.Reporting;
+using GivenSpecs.Application.Tables;
+using GivenSpecs.Attributes;
+using GivenSpecs.Enumerations;
+using GivenSpecs.Helpers;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
 using Xunit.Abstractions;
 
 namespace GivenSpecs
 {
-    public class ScenarioContext
-    {
-        private readonly StepResolver _resolver;
-
-        public Dictionary<string, object> Data { get; set; }
-
-        public ScenarioContext(StepResolver resolver)
-        {
-            this._resolver = resolver;
-            this.Data = new Dictionary<string, object>();
-        }
-
-        public List<string> CurrentScenario_Tags()
-        {
-            var scenario = _resolver.GetReportedScenario();
-            return scenario.Tags.Select(x => x.Name).ToList();
-        }
-
-        public void Attach(string data, string mimeType)
-        {
-            _resolver._currentEmbeddings.Add(new ReportedStepEmbeddings()
-            {
-                Data = data,
-                MimeType = mimeType
-            });
-        }
-    }
-
     public class StepResolver
     {
         private readonly Assembly _assembly;
-        private StepType _lastType;
+        private StepTypeEnum _lastType;
         private ITestOutputHelper _output;
         private bool hasError = false;
         private string lastError = "";
@@ -49,12 +22,13 @@ namespace GivenSpecs
         private ReportedScenario _scenario;
         public List<ReportedStepEmbeddings> _currentEmbeddings;
         private List<(string, string)> _replacements;
+        private FixtureClass _fixture;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
             _output = output;
             _assembly = assembly;
-            _lastType = StepType.Given;
+            _lastType = StepTypeEnum.Given;
             _context = new ScenarioContext(this);
         }
 
@@ -63,7 +37,6 @@ namespace GivenSpecs
             return _scenario;
         }
 
-        private FixtureClass _fixture;
         public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, List<(string, string)> replacements, ReportedScenario scenario)
         {
             hasError = false;
@@ -75,51 +48,23 @@ namespace GivenSpecs
             _replacements = replacements;
         }
 
-        private List<MethodInfo> GetMethodsOfType<T>()
+        private void ProcessStep<T>(string text, StepTypeEnum step, string multiline, Table table = null) where T : StepBaseAttribute
         {
-            var bindings = _assembly.GetTypes()
-                .Where(t => t.GetCustomAttributes().Any(x => x is BindingAttribute))
-                .ToList();
-            var methods = bindings.SelectMany(x => x.GetMethods().Where(m => m.GetCustomAttributes().Any(mAttr => mAttr is T))).ToList();
-            return methods;
-        }
-
-        private void MatchMethod<T>(List<MethodInfo> methods, string text, string multiline, Table table, ReportedStep step) where T: StepBaseAttribute
-        {
-            foreach(var m in methods)
+            var applyReplacements = new Func<string, string>((string input) =>
             {
-                var attribute = m.GetCustomAttributes(typeof(T), true).FirstOrDefault() as T;
-                var rgx = new Regex(attribute.Regex);
-                var match = rgx.Match(text);
-                if(match.Success)
+                if (_replacements == null || _replacements.Count == 0)
                 {
-                    var groups = match.Groups.Select(x => x.Value).Skip(1).ToList<object>();
-                    if(multiline != null)
-                    {
-                        groups.Add(multiline);
-                    }
-                    if(table != null)
-                    {
-                        groups.Add(table);
-                    }
-                    var ctrParams = new object[]
-                    {
-                        _context
-                    };
-                    var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
-                    m.Invoke(obj, groups.ToArray());
-                    return;
+                    return input;
                 }
-            }
-            throw new Exception($"no step for {step.Keyword}-> {text}");
-        }
+                var result = input;
+                foreach (var r in _replacements)
+                {
+                    result = result.Replace($"<{r.Item1}>", r.Item2);
+                }
+                return result;
+            });
 
-        private void ProcessStep<T>(string text, StepType step, string multiline, Table table = null) where T: StepBaseAttribute
-        {
-            foreach (var r in _replacements)
-            {
-                text = text.Replace($"<{r.Item1}>", r.Item2);
-            }
+            text = applyReplacements(text);
 
             _currentEmbeddings = new List<ReportedStepEmbeddings>();
             var reportedStep = new ReportedStep()
@@ -128,8 +73,12 @@ namespace GivenSpecs
                 Name = text,
             };
             _output.WriteLine($"-> {step.ToString()} {text}");
+
+            // Multline
             if (multiline != null)
             {
+                multiline = applyReplacements(multiline);
+
                 _output.WriteLine(multiline);
                 var reportedDocstring = new ReportedArgument_DocString()
                 {
@@ -137,20 +86,24 @@ namespace GivenSpecs
                 };
                 reportedStep.Arguments.Add(reportedDocstring);
             }
-            if(table != null)
+
+            // Table
+            if (table != null)
             {
+                table.ApplyReplacements(applyReplacements);
+
                 _output.WriteLine(table.ToString());
                 var reportedTable = new ReportedArgument_Table();
                 var reportedTable_RowHeader = new ReportedArgument_TableRow();
-                foreach (var h in table.Header)
+                foreach (var h in table.GetHeaders())
                 {
                     reportedTable_RowHeader.Cells.Add(h);
                 }
                 reportedTable.Rows.Add(reportedTable_RowHeader);
-                foreach (var r in table.Rows)
+                foreach (var r in table.GetRows())
                 {
                     var reportedTable_Row = new ReportedArgument_TableRow();
-                    foreach(var cell in r)
+                    foreach (var cell in r.Cells)
                     {
                         reportedTable_Row.Cells.Add(cell.Value);
                     }
@@ -158,7 +111,9 @@ namespace GivenSpecs
                 }
                 reportedStep.Arguments.Add(reportedTable);
             }
+
             var stepStart = DateTime.UtcNow;
+
             if (hasError)
             {
                 _output.WriteLine($"   ... skipped");
@@ -169,16 +124,23 @@ namespace GivenSpecs
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
                 return;
             }
+
             _lastType = step;
-            var methods = GetMethodsOfType<T>();
+
+            // Find & Invoke
+
+            var methods = MethodsHelper.GetMethodsOfType<T>(_assembly);
             try
             {
-                MatchMethod<T>(methods, text, multiline, table, reportedStep);
+                if (!MethodsHelper.MatchMethodAndInvoke<T>(methods, text, multiline, table, _context))
+                {
+                    throw new Exception($"no step for {reportedStep.Keyword} -> {text}");
+                }
                 reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
                     Status = "passed",
-                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000
+                    Duration = (long)DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000
                 };
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
                 _output.WriteLine($"   ... ok");
@@ -192,33 +154,38 @@ namespace GivenSpecs
                 reportedStep.Result = new ReportedStepResult()
                 {
                     Status = "failed",
-                    Duration = (long) DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000,
+                    Duration = (long)DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000,
                     ErrorMessage = ex.Message
                 };
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
             }
         }
 
+        public void SetCucumberReportPath(string path)
+        {
+            _fixture.SetCucumberReportPath(path);
+        }
+
         public void Given(string text, string multiline, Table table = null)
         {
-            ProcessStep<GivenAttribute>(text, StepType.Given, multiline, table);
+            ProcessStep<GivenAttribute>(text, StepTypeEnum.Given, multiline, table);
         }
 
         public void When(string text, string multiline, Table table = null)
         {
-            ProcessStep<WhenAttribute>(text, StepType.When, multiline, table);
+            ProcessStep<WhenAttribute>(text, StepTypeEnum.When, multiline, table);
         }
 
         public void Then(string text, string multiline, Table table = null)
         {
-            ProcessStep<ThenAttribute>(text, StepType.Then, multiline, table);
+            ProcessStep<ThenAttribute>(text, StepTypeEnum.Then, multiline, table);
         }
 
         public void And(string text, string multiline, Table table = null)
         {
-            if (_lastType == StepType.Given) Given(text, multiline, table);
-            if (_lastType == StepType.When) When(text, multiline, table);
-            if (_lastType == StepType.Then) Then(text, multiline, table);
+            if (_lastType == StepTypeEnum.Given) Given(text, multiline, table);
+            if (_lastType == StepTypeEnum.When) When(text, multiline, table);
+            if (_lastType == StepTypeEnum.Then) Then(text, multiline, table);
         }
 
         public void But(string text, string multiline, Table table = null)
@@ -228,8 +195,8 @@ namespace GivenSpecs
 
         public void BeforeScenario()
         {
-            var methods = GetMethodsOfType<BeforeScenarioAttribute>();
-            foreach(var m in methods)
+            var methods = MethodsHelper.GetMethodsOfType<BeforeScenarioAttribute>(_assembly);
+            foreach (var m in methods)
             {
                 var ctrParams = new object[]
                 {
@@ -242,7 +209,7 @@ namespace GivenSpecs
 
         public void AfterScenario()
         {
-            var methods = GetMethodsOfType<AfterScenarioAttribute>();
+            var methods = MethodsHelper.GetMethodsOfType<AfterScenarioAttribute>(_assembly);
             foreach (var m in methods)
             {
                 var ctrParams = new object[]
@@ -252,7 +219,7 @@ namespace GivenSpecs
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
             }
-            if(hasError)
+            if (hasError)
             {
                 throw new Exception(lastError);
             }

@@ -1,28 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.1.9</Version>
+    <Version>0.1.19</Version>
     <Authors>Ludwig Jossieaux</Authors>
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Remove="nupkg\**" />
     <EmbeddedResource Remove="nupkg\**" />
     <None Remove="nupkg\**" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="xunit.abstractions" Version="2.0.3" />
   </ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\GivenSpecs.Application\GivenSpecs.Application.csproj" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>C:\Program Files\dotnet\sdk\NuGetFallbackFolder\newtonsoft.json\9.0.1\lib\netstandard1.0\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
-
 </Project>

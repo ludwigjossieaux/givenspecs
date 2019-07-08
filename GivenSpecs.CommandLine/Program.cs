@@ -1,63 +1,61 @@
 ﻿using CommandLine;
-using GivenSpecs.CommandLine.Generate;
+using GivenSpecs.Application;
+using GivenSpecs.Application.Configuration;
+using GivenSpecs.Application.Interfaces;
+using GivenSpecs.CommandLine.Options;
 using GlobExpressions;
-using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.IO;
-using System.Threading.Tasks;
 
 namespace GivenSpecs.CommandLine
 {
-    [Verb("generate", HelpText = "Generate tests from feature files.")]
-    public class GenerateOptions
-    {
-        [Option('f', "feature-path", Required = true, HelpText = "Path to the root of the feature files")]
-        public string FeaturePath { get; set; }
-        [Option('n', "namespace", Required = true, HelpText = "Namespace to use for the test files")]
-        public string Namespace { get; set; }
-    }
-
-    [Verb("other", HelpText = "Other.")]
-    public class OtherOptions
-    {
-    }
-
     class Program
     {
         static int Main(string[] args)
         {
-            //RunGenerateAndReturnExitCode(new GenerateOptions()
-            //{
-            //    FeaturePath = @"D:\DEV\personal\givenspecs\TestProject\Features\00BasicGherkin",
-            //    Namespace = "TestProject.Features"
-            //});
-            //return 0;
             return Parser.Default
-                .ParseArguments<GenerateOptions, OtherOptions>(args)
+                .ParseArguments<GenerateOptions>(args)
                 .MapResult(
                     (GenerateOptions opts) => RunGenerateAndReturnExitCode(opts),
-                    (OtherOptions opts) => 1,
                     errs => 1
                 );
         }
 
         static int RunGenerateAndReturnExitCode(GenerateOptions opts)
         {
-            var root = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, opts.FeaturePath));
+            // Dependency injection
+            var services = new ServiceCollection();
+            var config = new GivenSpecsAppConfiguration()
+            {
+                FeatureNamespace = opts.Namespace
+            };
+            services.AddGivenSpecsAppServices(config);
+            var serviceProvider = services.BuildServiceProvider();
+
+            DirectoryInfo root = opts.AbsolutePath ?
+                new DirectoryInfo(opts.FeaturePath) :
+                new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, opts.FeaturePath));
+            Console.WriteLine($"Searching feature files in : {root.FullName}");
             var files = root.GlobFiles("**/*.feature");
-            var gen = new XunitGenerator(opts);
+            var gen = serviceProvider.GetService<IXunitGeneratorService>();
             var first = true;
-            foreach(var f in files)
+
+            foreach (var f in files)
             {
                 try
                 {
+                    Console.WriteLine($"Processing file: {f.FullName}");
+
                     var parser = new Gherkin.Parser();
                     var content = parser.Parse(f.FullName);
-                    var test = gen.Generate(content, f.FullName, first);
+
+                    var test = gen.Generate(content, f.FullName, first, gen).Result;
+
                     var outputPath = f.FullName + ".cs";
                     File.WriteAllText(outputPath, test);
                 }
-                catch (Exception ex )
+                catch (Exception ex)
                 {
                     throw;
                 }

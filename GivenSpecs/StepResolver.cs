@@ -224,5 +224,33 @@ namespace GivenSpecs
                 throw new Exception(lastError);
             }
         }
+
+        public void BeforeStep()
+        {
+            var methods = MethodsHelper.GetMethodsOfType<BeforeStepAttribute>(_assembly);
+            foreach (var m in methods)
+            {
+                var ctrParams = new object[]
+                {
+                    _context
+                };
+                var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
+                m.Invoke(obj, null);
+            }
+        }
+
+        public void AfterStep()
+        {
+            var methods = MethodsHelper.GetMethodsOfType<AfterStepAttribute>(_assembly);
+            foreach (var m in methods)
+            {
+                var ctrParams = new object[]
+                {
+                    _context
+                };
+                var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
+                m.Invoke(obj, null);
+            }
+        }
     }
 }

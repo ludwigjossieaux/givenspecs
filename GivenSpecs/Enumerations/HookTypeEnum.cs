@@ -10,7 +10,7 @@
         AfterScenario,
         //BeforeScenarioBlock,
         //AfterScenarioBlock,
-        //BeforeStep,
-        //AfterStep
+        BeforeStep,
+        AfterStep
     }
 }

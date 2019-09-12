@@ -60,7 +60,11 @@ private void _Background()
     {{ else }}
          GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
     {{ end }}
-    _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
+
+    var stepMessage{{ step.random }} = @"{{ step.text }}";
+    _steps.BeforeStep(stepMessage{{ step.random }});
+    _steps.{{ step.keyword }}(stepMessage{{ step.random }}, txt{{ step.random }}, table{{ step.random }});
+    _steps.AfterStep(stepMessage{{ step.random }});
 {{ end }}
 }
 
@@ -124,7 +128,10 @@ this._Background();
         GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
     {{ end }}
 
-    _steps.{{ step.keyword }}(@"{{ step.text }}", txt{{ step.random }}, table{{ step.random }});
+    var stepMessage{{ step.random }} = @"{{ step.text }}";
+    _steps.BeforeStep(stepMessage{{ step.random }});
+    _steps.{{ step.keyword }}(stepMessage{{ step.random }}, txt{{ step.random }}, table{{ step.random }});
+    _steps.AfterStep(stepMessage{{ step.random }});
 {{ end }}
 _steps.AfterScenario();
 }

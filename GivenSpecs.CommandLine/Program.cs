@@ -5,6 +5,7 @@ using GivenSpecs.Application.Interfaces;
 using GivenSpecs.CommandLine.Options;
 using GlobExpressions;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
 using System.IO;
 
@@ -54,6 +55,13 @@ namespace GivenSpecs.CommandLine
 
                     var outputPath = f.FullName + ".cs";
                     File.WriteAllText(outputPath, test);
+
+                    if(opts.GenerateAstJson)
+                    {
+                        var contentStr = JsonConvert.SerializeObject(content);
+                        outputPath = f.FullName + ".ast.json";
+                        File.WriteAllText(outputPath, contentStr);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -225,7 +225,7 @@ namespace GivenSpecs
             }
         }
 
-        public void BeforeStep()
+        public void BeforeStep(string stepText)
         {
             var methods = MethodsHelper.GetMethodsOfType<BeforeStepAttribute>(_assembly);
             foreach (var m in methods)
@@ -235,11 +235,15 @@ namespace GivenSpecs
                     _context
                 };
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
-                m.Invoke(obj, null);
+                var methodParams = new object[]
+                {
+                    stepText
+                };
+                m.Invoke(obj, methodParams);
             }
         }
 
-        public void AfterStep()
+        public void AfterStep(string stepText)
         {
             var methods = MethodsHelper.GetMethodsOfType<AfterStepAttribute>(_assembly);
             foreach (var m in methods)
@@ -249,7 +253,11 @@ namespace GivenSpecs
                     _context
                 };
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
-                m.Invoke(obj, null);
+                var methodParams = new object[]
+                {
+                    stepText
+                };
+                m.Invoke(obj, methodParams);
             }
         }
     }

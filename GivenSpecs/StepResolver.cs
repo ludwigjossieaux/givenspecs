@@ -74,7 +74,7 @@ namespace GivenSpecs
             };
             _output.WriteLine($"-> {step.ToString()} {text}");
 
-            // Multline
+            // Multiline
             if (multiline != null)
             {
                 multiline = applyReplacements(multiline);
@@ -130,9 +130,10 @@ namespace GivenSpecs
             // Find & Invoke
 
             var methods = MethodsHelper.GetMethodsOfType<T>(_assembly);
+            var paramConverters = MethodsHelper.GetParameterConverters(_assembly);
             try
             {
-                if (!MethodsHelper.MatchMethodAndInvoke<T>(methods, text, multiline, table, _context))
+                if (!MethodsHelper.MatchMethodAndInvoke<T>(methods, paramConverters, text, multiline, table, _context))
                 {
                     throw new Exception($"no step for {reportedStep.Keyword} -> {text}");
                 }

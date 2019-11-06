@@ -21,6 +21,11 @@ namespace GivenSpecs
             this._resolver.SetCucumberReportPath(path);
         }
 
+        public void SetInconclusive(string tagName = "inconclusive")
+        {
+            this._resolver.SetUndefined(true, tagName);
+        }
+
         public List<string> CurrentScenario_Tags()
         {
             var scenario = _resolver.GetReportedScenario();

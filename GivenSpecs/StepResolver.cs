@@ -1,4 +1,5 @@
-﻿using GivenSpecs.Application.Reporting;
+﻿using GivenSpecs.Application.Exceptions;
+using GivenSpecs.Application.Reporting;
 using GivenSpecs.Application.Tables;
 using GivenSpecs.Attributes;
 using GivenSpecs.Enumerations;
@@ -15,8 +16,14 @@ namespace GivenSpecs
         private readonly Assembly _assembly;
         private StepTypeEnum _lastType;
         private ITestOutputHelper _output;
-        private bool hasError = false;
-        private string lastError = "";
+
+        private bool _shouldSkipStep;
+
+        //private bool hasError = false;
+        private bool _isUndefined = false;
+        private string _undefinedTag = "inconclusive";
+        //private string inconclusiveStatusTag = "inconclusive";
+        private string _lastError = "";
         private ScenarioContext _context;
         private ReportedFeature _feature;
         private ReportedScenario _scenario;
@@ -39,8 +46,8 @@ namespace GivenSpecs
 
         public void ScenarioReset(FixtureClass fixture, ReportedFeature feature, List<(string, string)> replacements, ReportedScenario scenario)
         {
-            hasError = false;
-            lastError = "";
+            _shouldSkipStep = false;
+            _lastError = "";
             _context = new ScenarioContext(this);
             _fixture = fixture;
             _feature = feature;
@@ -114,7 +121,17 @@ namespace GivenSpecs
 
             var stepStart = DateTime.UtcNow;
 
-            if (hasError)
+            if (_isUndefined)
+            {
+                _output.WriteLine($"   ... undefined");
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "undefined",
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
+                return;
+            }
+            if (_shouldSkipStep)
             {
                 _output.WriteLine($"   ... skipped");
                 reportedStep.Result = new ReportedStepResult()
@@ -133,10 +150,7 @@ namespace GivenSpecs
             var paramConverters = MethodsHelper.GetParameterConverters(_assembly);
             try
             {
-                if (!MethodsHelper.MatchMethodAndInvoke<T>(methods, paramConverters, text, multiline, table, _context))
-                {
-                    throw new Exception($"no step for {reportedStep.Keyword} -> {text}");
-                }
+                MethodsHelper.MatchMethodAndInvoke<T>(methods, paramConverters, reportedStep.Keyword, text, multiline, table, _context);
                 reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
@@ -146,25 +160,57 @@ namespace GivenSpecs
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
                 _output.WriteLine($"   ... ok");
             }
+            catch (StepNotFoundException ex)
+            {
+                _output.WriteLine($"   ... error: {ex.Message}");
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "pending",
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
+                _shouldSkipStep = true;
+                _lastError = ex.Message;
+                return;
+            }
+            catch (MultipleStepsFoundException ex)
+            {
+                _output.WriteLine($"   ... error: {ex.Message}");
+                reportedStep.Result = new ReportedStepResult()
+                {
+                    Status = "ambiguous",
+                };
+                _fixture.ReportStep(_feature, _scenario, reportedStep);
+                _shouldSkipStep = true;
+                _lastError = ex.Message;
+                return;
+            }
             catch (Exception ex)
             {
-                hasError = true;
-                lastError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                _output.WriteLine($"   ... error: {lastError}");
+                var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                _output.WriteLine($"   ... error: {errorMessage}");
                 reportedStep.Embeddings = _currentEmbeddings;
                 reportedStep.Result = new ReportedStepResult()
                 {
                     Status = "failed",
                     Duration = (long)DateTime.UtcNow.Subtract(stepStart).TotalMilliseconds * 1000000,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = errorMessage
                 };
                 _fixture.ReportStep(_feature, _scenario, reportedStep);
+                _shouldSkipStep = true;
+                _lastError = errorMessage;
+                return;
             }
         }
 
         public void SetCucumberReportPath(string path)
         {
             _fixture.SetCucumberReportPath(path);
+        }
+
+        public void SetUndefined(bool value, string tagName)
+        {
+            _isUndefined = value;
+            _undefinedTag = tagName;
         }
 
         public void Given(string text, string multiline, Table table = null)
@@ -220,9 +266,9 @@ namespace GivenSpecs
                 var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
                 m.Invoke(obj, null);
             }
-            if (hasError)
+            if(_shouldSkipStep && !string.IsNullOrWhiteSpace(_lastError))
             {
-                throw new Exception(lastError);
+                throw new Exception(_lastError);
             }
         }
 

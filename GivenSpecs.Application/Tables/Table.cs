@@ -5,40 +5,6 @@ using System.Linq;
 
 namespace GivenSpecs.Application.Tables
 {
-    public class TableRow
-    {
-        List<string> _headers;
-        public List<TableCell> Cells { get; set; }
-
-        public string[] GetValuesAsArray()
-        {
-            var list = Cells.Select(x => x.Value);
-            return list.ToArray();
-        }
-
-        public string Get(int idx)
-        {
-            return Cells[idx].Value;
-        }
-
-        public string Get(string header)
-        {
-            var pos = _headers.IndexOf(header);
-            return Cells[pos].Value;
-        }
-
-        public TableRow(List<string> headers)
-        {
-            this._headers = headers;
-            Cells = new List<TableCell>();
-        }
-    }
-
-    public class TableCell
-    {
-        public string Value { get; set; }
-    }
-
     public class Table
     {
         List<string> _headers;

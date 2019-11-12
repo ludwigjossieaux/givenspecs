@@ -4,8 +4,9 @@
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Version>0.1.25</Version>
+    <Version>0.1.26</Version>
     <Authors>Ludwig Jossieaux</Authors>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="nupkg\**" />
@@ -16,11 +17,21 @@
     <PackageReference Include="xunit.abstractions" Version="2.0.3" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GivenSpecs.Application\GivenSpecs.Application.csproj" />
+    <ProjectReference Include="..\GivenSpecs.Application\GivenSpecs.Application.csproj">
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <IncludeAssets>GivenSpecs.Application.dll</IncludeAssets>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>C:\Program Files\dotnet\sdk\NuGetFallbackFolder\newtonsoft.json\9.0.1\lib\netstandard1.0\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
+    </ItemGroup>
+  </Target>
 </Project>

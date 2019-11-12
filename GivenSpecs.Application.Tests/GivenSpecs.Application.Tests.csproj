@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <IsPackable>false</IsPackable>
-    <Version>0.1.25</Version>
+    <Version>0.1.26</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="5.1.1" />

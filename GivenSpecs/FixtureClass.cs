@@ -47,7 +47,15 @@ namespace GivenSpecs
         {
             var idx = features.FindIndex(x => x.Id == feature.Id);
             var featToModify = features[idx];
-            featToModify.Elements.Add(scenario);
+            var scenarioIdx = featToModify.Elements.FindIndex(x => x.Id == scenario.Id);
+            if(scenarioIdx < 0)
+            {
+                featToModify.Elements.Add(scenario);
+            } 
+            else
+            {
+                featToModify.Elements[scenarioIdx] = scenario;
+            }
             features[idx] = featToModify;
         }
 

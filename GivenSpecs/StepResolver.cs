@@ -19,10 +19,7 @@ namespace GivenSpecs
 
         private bool _shouldSkipStep;
 
-        //private bool hasError = false;
         private bool _isUndefined = false;
-        private string _undefinedTag = "inconclusive";
-        //private string inconclusiveStatusTag = "inconclusive";
         private string _lastError = "";
         private ScenarioContext _context;
         private ReportedFeature _feature;
@@ -30,6 +27,8 @@ namespace GivenSpecs
         public List<ReportedStepEmbeddings> _currentEmbeddings;
         private List<(string, string)> _replacements;
         private FixtureClass _fixture;
+        private int _maxRetries = 1;
+        private int _currentRetryNumber = 0;
 
         public StepResolver(Assembly assembly, ITestOutputHelper output)
         {
@@ -207,10 +206,29 @@ namespace GivenSpecs
             _fixture.SetCucumberReportPath(path);
         }
 
-        public void SetUndefined(bool value, string tagName)
+        public void SetUndefined(bool value)
         {
             _isUndefined = value;
-            _undefinedTag = tagName;
+        }
+
+        public bool Retry_GetCanRetry()
+        {
+            return _currentRetryNumber < _maxRetries;
+        }
+
+        public void Retry_IncrementRetry()
+        {
+            _currentRetryNumber++;
+        }
+
+        public void Retry_ResetRetry()
+        {
+            _currentRetryNumber = 0;
+        }
+
+        public void SetMaxRetries(int maxRetries)
+        {
+            _maxRetries = maxRetries;
         }
 
         public void Given(string text, string multiline, Table table = null)

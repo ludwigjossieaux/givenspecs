@@ -63,7 +63,7 @@ namespace GivenSpecs.CommandLine
                         File.WriteAllText(outputPath, contentStr);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     throw;
                 }

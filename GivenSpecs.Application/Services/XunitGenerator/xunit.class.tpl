@@ -1,6 +1,7 @@
 ﻿using Xunit;
 using Xunit.Abstractions;
 using System.Collections.Generic;
+using System;
 
 namespace {{ namespace }} {
 
@@ -33,6 +34,49 @@ Line = {{ reported.line }},
 Name = "{{ reported.name }}"
 };
 _fixture.ReportFeature(_feature);
+}
+
+// Backward compatible
+
+private bool testPerformed = false;
+
+private void _Retry_ResetRetry()
+{
+	var method = _steps.GetType().GetMethod("Retry_ResetRetry");
+	if(method != null)
+	{
+		method.Invoke(_steps, new object[] {});
+	} 
+	else 
+	{
+		testPerformed = false;
+	}
+}
+
+private bool _Retry_GetCanRetry()
+{
+	var method = _steps.GetType().GetMethod("Retry_GetCanRetry");
+	if(method != null)
+	{
+		return (bool) method.Invoke(_steps, new object[] {});
+	} 
+	else 
+	{
+		return !testPerformed;
+	}
+}
+
+private void _Retry_IncrementRetry()
+{
+	var method = _steps.GetType().GetMethod("Retry_IncrementRetry");
+	if(method != null)
+	{
+		method.Invoke(_steps, new object[] {});
+	} 
+	else 
+	{
+		testPerformed = true;
+	}
 }
 
 // Background
@@ -88,52 +132,71 @@ public void {{ sc.method_name }}({{ sc.parameters_string}})
 string givenSpecsIdx = "0";
 {{ end }}
 
-var reportedScenario = new GivenSpecs.Application.Reporting.ReportedScenario() {
-Id = $"{{ sc.reported.id }}-{givenSpecsIdx}",
-Keyword = "Scenario",
-Line = {{ sc.reported.line }},
-Name = $"{{ sc.reported.name }} [{givenSpecsIdx}]",
-Type = "{{ sc.reported.type }}"
-};
-{{ for tag in sc.reported.tags }}
-reportedScenario.Tags.Add(new GivenSpecs.Application.Reporting.ReportedTag() { Line = {{ tag.line }}, Name = "{{ tag.name }}" });
-{{ end }}
-_fixture.ReportScenario(_feature, reportedScenario);
-var replacements = new List<(string, string)>() { {{ sc.parameters_map }} };
-_steps.ScenarioReset(_fixture, _feature, replacements, reportedScenario);
-_steps.BeforeScenario();
-this._Background();
-{{ for step in sc.steps }}
+_Retry_ResetRetry();
 
-    {{ if step.has_multiline_text }}
-    string txt{{ step.random }} = @"{{ step.multiline_text }}";
-    {{ else }}
-    string txt{{ step.random }} = null;
-    {{ end }}
+while(_Retry_GetCanRetry())
+{
+	try 
+	{
+		var reportedScenario = new GivenSpecs.Application.Reporting.ReportedScenario() {
+		Id = $"{{ sc.reported.id }}-{givenSpecsIdx}",
+		Keyword = "Scenario",
+		Line = {{ sc.reported.line }},
+		Name = $"{{ sc.reported.name }} [{givenSpecsIdx}]",
+		Type = "{{ sc.reported.type }}"
+		};
+		{{ for tag in sc.reported.tags }}
+		reportedScenario.Tags.Add(new GivenSpecs.Application.Reporting.ReportedTag() { Line = {{ tag.line }}, Name = "{{ tag.name }}" });
+		{{ end }}
+		_fixture.ReportScenario(_feature, reportedScenario);
+		var replacements = new List<(string, string)>() { {{ sc.parameters_map }} };
+		_steps.ScenarioReset(_fixture, _feature, replacements, reportedScenario);
+		_steps.BeforeScenario();
+		this._Background();
+		{{ for step in sc.steps }}
 
-    {{ if step.table }}
-        var table{{ step.random }} = new GivenSpecs.Application.Tables.Table(new string[] {
-        {{ for header in step.header_row.cells }}
-            "{{ header.value }}",
-        {{ end }}
-        });
-        {{ for table_row in step.data_rows }}
-            table{{ step.random }}.AddRow(new string[] {
-                {{ for cell in table_row.cells }}
-                    "{{ cell.value }}",
-                {{ end }}
-            });
-        {{ end }}
-    {{ else }}
-        GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
-    {{ end }}
+			{{ if step.has_multiline_text }}
+			string txt{{ step.random }} = @"{{ step.multiline_text }}";
+			{{ else }}
+			string txt{{ step.random }} = null;
+			{{ end }}
 
-    var stepMessage{{ step.random }} = @"{{ step.text }}";
-    _steps.BeforeStep(stepMessage{{ step.random }});
-    _steps.{{ step.keyword }}(stepMessage{{ step.random }}, txt{{ step.random }}, table{{ step.random }});
-    _steps.AfterStep(stepMessage{{ step.random }});
-{{ end }}
-_steps.AfterScenario();
+			{{ if step.table }}
+				var table{{ step.random }} = new GivenSpecs.Application.Tables.Table(new string[] {
+				{{ for header in step.header_row.cells }}
+					"{{ header.value }}",
+				{{ end }}
+				});
+				{{ for table_row in step.data_rows }}
+					table{{ step.random }}.AddRow(new string[] {
+						{{ for cell in table_row.cells }}
+							"{{ cell.value }}",
+						{{ end }}
+					});
+				{{ end }}
+			{{ else }}
+				GivenSpecs.Application.Tables.Table table{{ step.random }} = null;
+			{{ end }}
+
+			var stepMessage{{ step.random }} = @"{{ step.text }}";
+			_steps.BeforeStep(stepMessage{{ step.random }});
+			_steps.{{ step.keyword }}(stepMessage{{ step.random }}, txt{{ step.random }}, table{{ step.random }});
+			_steps.AfterStep(stepMessage{{ step.random }});
+		{{ end }}
+		_steps.AfterScenario();
+
+		return;
+	}
+	catch(Exception) 
+	{
+		_Retry_IncrementRetry();
+		if(!_Retry_GetCanRetry())
+		{
+			throw;
+		}
+	}
+}
+
 }
 {{ end }}
 

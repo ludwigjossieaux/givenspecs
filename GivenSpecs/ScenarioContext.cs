@@ -23,7 +23,12 @@ namespace GivenSpecs
 
         public void SetInconclusive(string tagName = "inconclusive")
         {
-            this._resolver.SetUndefined(true, tagName);
+            this._resolver.SetUndefined(true);
+        }
+
+        public void SetMaxRetries(int maxRetries)
+        {
+            this._resolver.SetMaxRetries(maxRetries);
         }
 
         public List<string> CurrentScenario_Tags()

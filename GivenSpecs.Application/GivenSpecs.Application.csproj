@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-    <Version>0.1.25</Version>
+    <Version>0.1.26</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Services\XunitGenerator\xunit.class.tpl" />

@@ -1,6 +1,9 @@
 # parameters
 $key = '__KEY__'
-$version = '0.1.25'
+$version = '0.1.26'
+
+# clean
+dotnet clean
 
 # apply version
 
@@ -12,7 +15,8 @@ Push-Location
 
 cd "GivenSpecs"
 dotnet build --configuration=Release -p:Version=$version
-nuget.exe pack -OutputDirectory ./nupkg -IncludeReferencedProjects -Version $version
+#dotnet pack -c Release
+nuget.exe pack -OutputDirectory ./nupkg -IncludeReferencedProjects -Version $version -Prop Configuration=Release
 
 Pop-Location
 

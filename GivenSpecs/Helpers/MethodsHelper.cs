@@ -43,12 +43,15 @@ namespace GivenSpecs.Helpers
             // Search for matching methods
             foreach(var method in methods)
             {
-                var attribute = method.GetCustomAttributes(typeof(T), true).FirstOrDefault() as T;
-                var rgx = new Regex(attribute.Regex);
-                var methodMatch = rgx.Match(text);
-                if(methodMatch.Success)
+                var attributes = method.GetCustomAttributes(typeof(T), true).Cast<T>().ToList<T>();
+                foreach(var attr in attributes)
                 {
-                    matchingMethods.Add((method, methodMatch));
+                    var rgx = new Regex(attr.Regex);
+                    var methodMatch = rgx.Match(text);
+                    if(methodMatch.Success && !matchingMethods.Any(x => x.Item1 == method))
+                    {
+                        matchingMethods.Add((method, methodMatch));
+                    }
                 }
             }
 
@@ -67,7 +70,22 @@ namespace GivenSpecs.Helpers
             var m = matchingMethods[0].Item1;
             var match = matchingMethods[0].Item2;
 
+#if NETSTANDARD2_0
+            var groups = new List<object>();
+            var isFirst = true;
+            foreach(Group g in match.Groups)
+            {
+                if (isFirst) 
+                {
+                    isFirst = false;
+                    continue;
+                }
+                groups.Add(g.Value);
+            }
+#elif NETSTANDARD2_1
             var groups = match.Groups.Select(x => x.Value).Skip(1).ToList<object>();
+#endif
+
             if (multiline != null)
             {
                 groups.Add(multiline);
@@ -78,7 +96,7 @@ namespace GivenSpecs.Helpers
             }
             var ctrParams = new object[]
             {
-                        context
+                context
             };
             var obj = Activator.CreateInstance(m.DeclaringType, ctrParams);
             var parameters = groups.ToArray();

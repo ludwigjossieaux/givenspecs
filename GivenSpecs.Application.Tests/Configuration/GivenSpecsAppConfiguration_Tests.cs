@@ -15,7 +15,7 @@ namespace GivenSpecs.Application.Tests.Configuration
         }
 
         [Fact]
-        public async Task FeatureNamespace_Get()
+        public void FeatureNamespace_Get()
         {
             // Arrange
             var config = new GivenSpecsAppConfiguration();
@@ -29,7 +29,7 @@ namespace GivenSpecs.Application.Tests.Configuration
         }
 
         [Fact]
-        public async Task FeatureNamespace_Set()
+        public void FeatureNamespace_Set()
         {
             // Arrange
             var config = new GivenSpecsAppConfiguration();

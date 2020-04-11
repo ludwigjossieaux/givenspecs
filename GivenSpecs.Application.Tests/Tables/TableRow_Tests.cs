@@ -20,7 +20,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region constructor
 
         [Fact]
-        public async Task Ctr_When_ItRuns_ItSetsHeaders()
+        public void Ctr_When_ItRuns_ItSetsHeaders()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -49,7 +49,7 @@ namespace GivenSpecs.Application.Tests.Tables
         }
 
         [Theory, MemberData(nameof(Ctr_When_HeadersAreNull_ItRaisesAnException_Data))]
-        public async Task Ctor_When_HeadersAreInvalid_ItRaisesAnException(List<string> headers)
+        public void Ctor_When_HeadersAreInvalid_ItRaisesAnException(List<string> headers)
         {
             // Arrange
 
@@ -61,7 +61,8 @@ namespace GivenSpecs.Application.Tests.Tables
                 .WithMessage("TableRow should be initialized with valid headers");
         }
 
-        public async Task Ctor_When_ItRuns_ItInitializesEmptyCellsTable()
+        [Fact]
+        public void Ctor_When_ItRuns_ItInitializesEmptyCellsTable()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -79,7 +80,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region Cells (get)
 
         [Fact]
-        public async Task Cells_Get()
+        public void Cells_Get()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -101,7 +102,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region Cells (set)
 
         [Fact]
-        public async Task Cells_Set()
+        public void Cells_Set()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -124,7 +125,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region GetHeaders
 
         [Fact]
-        public async Task GetHeader_When_ItRuns_ItRetrievesTheHeadersAtCreation()
+        public void GetHeader_When_ItRuns_ItRetrievesTheHeadersAtCreation()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -142,7 +143,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region GetValuesAsArray
 
         [Fact]
-        public async Task GetValuesAsArray_When_ItRuns_ItReturnsCellsValuesAsArray()
+        public void GetValuesAsArray_When_ItRuns_ItReturnsCellsValuesAsArray()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -166,7 +167,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region Get(idx)
 
         [Fact]
-        public async Task GetIdx_When_ItRuns_ItRetrievesTheCellValueAtIndex()
+        public void GetIdx_When_ItRuns_ItRetrievesTheCellValueAtIndex()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -188,7 +189,7 @@ namespace GivenSpecs.Application.Tests.Tables
         [Theory]
         [InlineData(-1)]
         [InlineData(5)]
-        public async Task GetIdx_When_IndexDoesntExist_ItReturnsNull(int index)
+        public void GetIdx_When_IndexDoesntExist_ItReturnsNull(int index)
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -210,7 +211,7 @@ namespace GivenSpecs.Application.Tests.Tables
         #region Get(header)
 
         [Fact]
-        public async Task GetHeader_When_ItRuns_ItRetrievesTheCellValueForHeader()
+        public void GetHeader_When_ItRuns_ItRetrievesTheCellValueForHeader()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };
@@ -230,7 +231,7 @@ namespace GivenSpecs.Application.Tests.Tables
         }
 
         [Fact]
-        public async Task GetHeader_When_HeaderDoesntExist_ItReturnsNull()
+        public void GetHeader_When_HeaderDoesntExist_ItReturnsNull()
         {
             // Arrange
             var h = new List<string>() { "header1", "header2" };

@@ -16,7 +16,7 @@ namespace GivenSpecs.Application.Tests.Tables
         }
 
         [Fact]
-        public async Task Value_Get()
+        public void Value_Get()
         {
             // Arrange
             var config = new TableCell();
@@ -30,7 +30,7 @@ namespace GivenSpecs.Application.Tests.Tables
         }
 
         [Fact]
-        public async Task Value_Set()
+        public void Value_Set()
         {
             // Arrange
             var config = new TableCell();

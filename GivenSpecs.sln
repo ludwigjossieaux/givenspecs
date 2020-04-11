@@ -21,7 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "100. Tests", "100. Tests", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GivenSpecs.Application.Tests", "GivenSpecs.Application.Tests\GivenSpecs.Application.Tests.csproj", "{3753FBD0-67F1-4024-91F2-6DC8FFD666BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GivenSpecs.Tests", "GivenSpecs.Tests\GivenSpecs.Tests.csproj", "{157F5F05-672F-4A91-BB5F-FCA903580B31}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GivenSpecs.Tests", "GivenSpecs.Tests\GivenSpecs.Tests.csproj", "{157F5F05-672F-4A91-BB5F-FCA903580B31}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

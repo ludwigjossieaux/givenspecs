@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-    <Version>0.1.27</Version>
+    <Version>0.1.28</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Services\XunitGenerator\xunit.class.tpl" />

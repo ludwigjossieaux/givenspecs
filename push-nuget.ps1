@@ -1,13 +1,16 @@
 # parameters
 $key = '__KEY__'
-$version = '0.1.27'
+$version = '0.1.28'
 
 # clean
-dotnet clean
+dotnet clean .\GivenSpecs.sln
 
 # apply version
-
-setversion -r $version
+setversion $version .\GivenSpecs\GivenSpecs.csproj
+setversion $version .\GivenSpecs.Application\GivenSpecs.Application.csproj
+setversion $version .\GivenSpecs.Application.Tests\GivenSpecs.Application.Tests.csproj
+setversion $version .\GivenSpecs.CommandLine\GivenSpecs.CommandLine.csproj
+setversion $version .\GivenSpecs.Tests\GivenSpecs.Tests.csproj
 
 # build GivenSpecs
 
